@@ -14,12 +14,17 @@ CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    curlworker.cpp
+    curlthread.cpp
 
 HEADERS  += mainwindow.h \
-    curlworker.h
+    curlthread.h
 
 FORMS    += mainwindow.ui
 
 LIBS    += -L/usr/local/lib \
+           -lopencv_core \
+           -lopencv_highgui \
+           -lopencv_videoio \
+           -lopencv_imgproc \
+           -lopencv_imgcodecs \
            -lcurl
