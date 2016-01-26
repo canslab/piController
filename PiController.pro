@@ -10,11 +10,16 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = PiController
 TEMPLATE = app
-
+CONFIG += c++11
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    curlworker.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    curlworker.h
 
 FORMS    += mainwindow.ui
+
+LIBS    += -L/usr/local/lib \
+           -lcurl
