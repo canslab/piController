@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTime>
+#include <QKeyEvent>
 #include "curlthread.h"
 
 namespace Ui {
@@ -16,14 +18,20 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+public:
+    void keyPressEvent(QKeyEvent *event);
+
 private slots:
     void on_cameraOn_clicked();
-    void showVideoAtLabel(int imageSize, unsigned char *imageData);
+    void showVideoAtLabel(cv::Mat *frameMat);
 
 
 private:
     Ui::MainWindow *ui;
     CurlThread *mCurlThread;
+
+
+    QTime myTime;
 };
 
 #endif // MAINWINDOW_H

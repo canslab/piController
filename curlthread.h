@@ -2,6 +2,9 @@
 #define CURLTHREAD_H
 #include <QThread>
 #include <curl/curl.h>
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
 
 struct MemStruct
 {
@@ -19,7 +22,7 @@ public:
     ~CurlThread();
 
 signals:
-    void imageIsReady(int imageSize, unsigned char *imageData);
+    void imageIsReady(cv::Mat *frameMat);
 
 public:
     static size_t writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, void *userData);
@@ -30,6 +33,8 @@ protected:
 private:
     CURL *mCtx;
     MemStruct *mMemory;
+    Mat mFrameMat;
+
 
 };
 

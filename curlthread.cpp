@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <QTime>
 
 // static function declaration.
 static int findHeader(unsigned char target[], const unsigned char *memory, int memorySize, int cachedPos);
@@ -18,7 +20,7 @@ CurlThread::CurlThread(const char *pszURL, QObject *parent)
 
     // init libcurl
     this->mCtx = curl_easy_init();
-    curl_easy_setopt(mCtx, CURLOPT_URL, "http://devjhlab.iptime.org:8080/?action=stream");
+    curl_easy_setopt(mCtx, CURLOPT_URL, pszURL);
     curl_easy_setopt(mCtx, CURLOPT_WRITEFUNCTION, &CurlThread::writeMemoryCallback);
 
     // callback should be able to refer to which thread called him.
@@ -91,6 +93,8 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
         {
             if (cachedX < cachedY)
             {
+                // elapsed time ==> 3 ~ 4 msec
+
                 // calculate the new buffer size
                 unsigned int newBufferSize = (mem->size - (cachedY + 2));
                 unsigned int imageSize = (cachedY - cachedX + 2);
@@ -114,11 +118,12 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
                 // reset cache (find position)
                 cachedX = cachedY = -1;
 
-                // emit SIGNAL!
-                emit masterThread->imageIsReady(imageSize, imageBuffer);
+                // image decode and save it to mFrame, and emit signal!
+                masterThread->mFrameMat = imdecode(Mat(1, imageSize, CV_8UC1, imageBuffer), CV_LOAD_IMAGE_UNCHANGED);
+//                cv::resize(masterThread->mFrameMat, masterThread->mFrameMat, cv::Size(640, 480));
 
-                // little bit sleeping...
-                QThread::msleep(1);
+                // emit SIGNAL!
+                emit masterThread->imageIsReady(&(masterThread->mFrameMat));
             }
         }
     }

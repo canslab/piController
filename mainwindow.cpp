@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QtCore>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -22,28 +23,34 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-//    delete mCurlThread;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if( event->key() == Qt::Key_Q)
+    {
+        ui->test->setText("QQ!!");
+    }
 }
 
 void MainWindow::on_cameraOn_clicked()
 {
+    myTime.start();
     mCurlThread->start();
 }
 
-void MainWindow::showVideoAtLabel(int imageSize, unsigned char *imageData)
+// this slot would be called every 50 msec
+void MainWindow::showVideoAtLabel(cv::Mat *frame)
 {
+//    qDebug() << myTime.elapsed();
     ui->cameraOn->setEnabled(false);
-    auto decodedImage = cv::imdecode(cv::Mat(1, imageSize, CV_8UC1, imageData),CV_LOAD_IMAGE_UNCHANGED);
-    cv::resize(decodedImage,decodedImage, cv::Size(ui->videoLabel->width(), ui->videoLabel->height()));
-    cv::cvtColor(decodedImage, decodedImage, CV_BGR2RGB);
 
+    // elaseped time == about 0 ~ 1 msec
+    cv::Mat decodedImage = *frame;
+
+    cv::cvtColor(decodedImage, decodedImage, CV_BGR2RGB);
     QImage img = QImage((uchar*)decodedImage.data, decodedImage.cols, decodedImage.rows, decodedImage.step,
                         QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img);
     ui->videoLabel->setPixmap(pix);
-
-    // free the image Data
-    free(imageData);
-
-    cv::waitKey(1);
 }
