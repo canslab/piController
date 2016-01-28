@@ -20,18 +20,18 @@ public:
 
 public:
     void keyPressEvent(QKeyEvent *event);
+    void mousePressEvent(QMouseEvent *event);
 
 private slots:
     void on_cameraOn_clicked();
     void showVideoAtLabel(cv::Mat *frameMat);
-
-
 private:
     Ui::MainWindow *ui;
     CurlThread *mCurlThread;
-
-
     QTime myTime;
+
+private:    /* constant */
+    QRect mVideoLabelRect;
 };
 
 #endif // MAINWINDOW_H

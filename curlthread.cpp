@@ -120,6 +120,8 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
 
                 // image decode and save it to mFrame, and emit signal!
                 masterThread->mFrameMat = imdecode(Mat(1, imageSize, CV_8UC1, imageBuffer), CV_LOAD_IMAGE_UNCHANGED);
+
+                // commented.. because label's width and height are equal to mFrameMat, doesn't have to call resize
 //                cv::resize(masterThread->mFrameMat, masterThread->mFrameMat, cv::Size(640, 480));
 
                 // emit SIGNAL!
