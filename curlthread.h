@@ -22,6 +22,7 @@ public:
     ~CurlThread();
 
 signals:
+    // when image is ready, CurlThread emit this signal to notify the client to receive Mat data
     void imageIsReady(cv::Mat *frameMat);
 
 public:
@@ -34,8 +35,6 @@ private:
     CURL *mCtx;
     MemStruct *mMemory;
     Mat mFrameMat;
-
-
 };
 
 #endif // CURLTHREAD_H

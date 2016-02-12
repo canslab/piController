@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -14,17 +14,28 @@ CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    curlthread.cpp
+    curlthread.cpp \
+    socketthread.cpp
 
 HEADERS  += mainwindow.h \
-    curlthread.h
+    curlthread.h \
+    socketthread.h
 
 FORMS    += mainwindow.ui
 
-LIBS    += -L/usr/local/lib \
-           -lopencv_core \
-           -lopencv_highgui \
-           -lopencv_videoio \
-           -lopencv_imgproc \
-           -lopencv_imgcodecs \
+INCLUDEPATH += /usr/local/include
+
+LIBS += -L/usr/local/lib \
+        -lopencv_core \
+        -lopencv_imgproc \
+        -lopencv_features2d \
+        -lopencv_highgui \
+        -lopencv_video \
+        -lopencv_tracking \
+        -lopencv_videoio \
+        -lopencv_imgcodecs \
            -lcurl
+
+
+
+

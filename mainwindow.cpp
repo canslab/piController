@@ -5,18 +5,41 @@
 #include <QPixmap>
 #include <QImage>
 #include <QtCore>
+#include "assert.h"
 
 
+/************************************************************************
+ *          constructor & destructor
+ * *********************************************************************/
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // curl thread
     mCurlThread = new CurlThread("http://devjhlab.iptime.org:8080/?action=stream");
+
+    // socket thread
+    mSocketThread = new SocketThread();
 
     // when mCurlThread's event loop has died, mCurlThread should be removed.
     connect(mCurlThread, &CurlThread::finished, mCurlThread, &CurlThread::deleteLater);
     connect(mCurlThread, &CurlThread::imageIsReady, this, &MainWindow::showVideoAtLabel);
+
+    //  mSocketThread -----> GUI Thread
+    connect(mSocketThread, SIGNAL(yourReadIsReady()), this, SLOT(whenReadIsReady()));
+    connect(mSocketThread, SIGNAL(yourReadDone(int,char*,int)), this, SLOT(whenReadJobDone(int, char*, int)));
+    connect(mSocketThread, SIGNAL(youConnected()), this, SLOT(whenConnectionDone()));
+    connect(mSocketThread, SIGNAL(youDisconnected()), this, SLOT(whenDisconnectionDone()));
+
+    // GUI Thread ----> mSocketThread
+    connect(this, SIGNAL(requestRead(char*,int)), mSocketThread, SLOT(readFromSockect(char*,int)));
+    connect(this, SIGNAL(requestConnection(std::string, uint16_t)), mSocketThread, SLOT(connectToHost(std::string, uint16_t)));
+//    connect(this, SIGNAL(requestDisconnection), mSocketThread, SLOT(disconnectFromHost()));
+
+    // run SocketThread
+    mSocketThread->start();
 
     mVideoLabelRect = ui->videoLabel->geometry();
 }
@@ -25,14 +48,17 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
+/************************************************************************
+ *          normal method
+ * *********************************************************************/
 void MainWindow::on_cameraOn_clicked()
 {
     myTime.start();
     mCurlThread->start();
 }
 
-// this slot would be called every 50 msec
+// When CurlThread is ready to send you a frame, this slot would be called...
+//  ( because you register signal-slot relationship in your initializer )
 void MainWindow::showVideoAtLabel(cv::Mat *frame)
 {
     ui->cameraOn->setEnabled(false);
@@ -72,7 +98,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
     }
 }
-
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     const int videoLabelX = mVideoLabelRect.x();
@@ -81,4 +106,38 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
     auto labelText = QString::asprintf("x = %d, y = %d", mosPos.x() - videoLabelX, mosPos.y() - videoLabelY);
     ui->mousePosLabel->setText(labelText);
+}
+
+/*****************************************
+ *          private SLOTS
+ *
+ * **************************************/
+void MainWindow::whenReadIsReady()
+{
+    // ready for buffer, protocol size's length is 8
+    char *buffer = new char[8];
+
+    emit requestRead(buffer, 8);
+}
+
+void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
+{
+    assert(buffer != nullptr);
+    qDebug() << buffer[0];
+}
+
+void MainWindow::whenConnectionDone()
+{
+    qDebug() << "connected..";
+}
+
+void MainWindow::whenDisconnectionDone()
+{
+    qDebug() << "disconnected..";
+}
+
+void MainWindow::on_connectButton_clicked()
+{
+    ui->connectButton->setEnabled(false);
+    emit requestConnection("devjhlab.iptime.org", 55555);
 }

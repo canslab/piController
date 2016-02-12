@@ -63,6 +63,8 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
     static unsigned char soi[] = { 0xff, 0xd8 };
     static unsigned char eoi[] = { 0xff, 0xd9 };
 
+    static unsigned char imageBuffer[250000] = {0,};
+
     size_t realSize = size * nmemb;
 
     CurlThread *masterThread = (CurlThread*)userData;
@@ -93,14 +95,12 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
         {
             if (cachedX < cachedY)
             {
-                // elapsed time ==> 3 ~ 4 msec
-
                 // calculate the new buffer size
                 unsigned int newBufferSize = (mem->size - (cachedY + 2));
                 unsigned int imageSize = (cachedY - cachedX + 2);
 
                 // image memory copy
-                unsigned char *imageBuffer = (unsigned char*)malloc(sizeof(unsigned char) * imageSize);
+//                unsigned char *imageBuffer = (unsigned char*)malloc(sizeof(unsigned char) * imageSize);
                 memcpy(imageBuffer, &(mem->pMemory[cachedX]), imageSize);
 
                 // memory copy
@@ -119,6 +119,7 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
                 cachedX = cachedY = -1;
 
                 // image decode and save it to mFrame, and emit signal!
+                // mFrameMat is the data structure that is shared by MainWindow
                 masterThread->mFrameMat = imdecode(Mat(1, imageSize, CV_8UC1, imageBuffer), CV_LOAD_IMAGE_UNCHANGED);
 
                 // commented.. because label's width and height are equal to mFrameMat, doesn't have to call resize
