@@ -181,7 +181,7 @@
      <string>Connect</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_5">
+   <widget class="QPushButton" name="disconnect_button">
     <property name="geometry">
      <rect>
       <x>680</x>
@@ -191,7 +191,7 @@
      </rect>
     </property>
     <property name="text">
-     <string/>
+     <string>Disconnect</string>
     </property>
    </widget>
   </widget>

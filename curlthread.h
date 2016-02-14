@@ -3,6 +3,7 @@
 #include <QThread>
 #include <curl/curl.h>
 #include <opencv2/opencv.hpp>
+#include <string>
 
 using namespace cv;
 

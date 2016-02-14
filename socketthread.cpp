@@ -6,7 +6,7 @@
  * ***********************************************************/
 void SocketThread::run()
 {
-
+    qDebug() << mSocket->thread();
     this->exec();
 }
 
@@ -110,7 +110,7 @@ void SocketThread::whenDisconnected()
 
 void SocketThread::whenReadyRead()
 {
-    emit yourReadIsReady();
+    emit youCanRead();
 }
 
 /***************************************************************
@@ -123,8 +123,8 @@ SocketThread::SocketThread(QObject *parent)
     :QThread(parent)
 {
     bConnected = false;
-
     // socket memory allocation.
+
     mSocket = new QTcpSocket();
 
     // associate signal(QTcpSocket) & slot(this=QThread)

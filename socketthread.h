@@ -9,7 +9,6 @@
 class SocketThread : public QThread
 {
     Q_OBJECT
-
 signals:
     /***********************************************************
      *
@@ -19,7 +18,7 @@ signals:
 
     // when there are available data in the read stream, whenReadyRead() slot will
     // emit yourReadIsReady()
-    void yourReadIsReady();
+    void youCanRead();
     void yourReadDone(int errorCode, char *buffer, int contentSize);
     void youDisconnected();
     void youConnected();

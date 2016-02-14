@@ -21,14 +21,14 @@ MainWindow::MainWindow(QWidget *parent) :
     mCurlThread = new CurlThread("http://devjhlab.iptime.org:8080/?action=stream");
 
     // socket thread
-    mSocketThread = new SocketThread();
+    mSocketThread = new SocketThread(this);
 
     // when mCurlThread's event loop has died, mCurlThread should be removed.
     connect(mCurlThread, &CurlThread::finished, mCurlThread, &CurlThread::deleteLater);
     connect(mCurlThread, &CurlThread::imageIsReady, this, &MainWindow::showVideoAtLabel);
 
-    //  mSocketThread -----> GUI Thread
-    connect(mSocketThread, SIGNAL(yourReadIsReady()), this, SLOT(whenReadIsReady()));
+    //  mSocketThread -----> GUI Thread (This Thread)
+    connect(mSocketThread, SIGNAL(youCanRead()), this, SLOT(whenReadIsReady()));
     connect(mSocketThread, SIGNAL(yourReadDone(int,char*,int)), this, SLOT(whenReadJobDone(int, char*, int)));
     connect(mSocketThread, SIGNAL(youConnected()), this, SLOT(whenConnectionDone()));
     connect(mSocketThread, SIGNAL(youDisconnected()), this, SLOT(whenDisconnectionDone()));
@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // GUI Thread ----> mSocketThread
     connect(this, SIGNAL(requestRead(char*,int)), mSocketThread, SLOT(readFromSockect(char*,int)));
     connect(this, SIGNAL(requestConnection(std::string, uint16_t)), mSocketThread, SLOT(connectToHost(std::string, uint16_t)));
-//    connect(this, SIGNAL(requestDisconnection), mSocketThread, SLOT(disconnectFromHost()));
+    connect(this, SIGNAL(requestDisconnection()), mSocketThread, SLOT(disconnectFromHost()));
 
     // run SocketThread
     mSocketThread->start();
@@ -114,6 +114,16 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
  * **************************************/
 void MainWindow::whenReadIsReady()
 {
+    /* *************************************************************************
+     *
+     *      when you are able to read the data from remote PC,
+     *      you should make an buffer to read from.
+     *      and give its address to Socket Thread.
+     *      Socket Thread will return the written buffer
+     *      you can access that buffer from  MainWindow::whenReadJobDone() method.
+     *
+     * *************************************************************************/
+
     // ready for buffer, protocol size's length is 8
     char *buffer = new char[8];
 
@@ -124,20 +134,29 @@ void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
 {
     assert(buffer != nullptr);
     qDebug() << buffer[0];
+
+    // deallocate used memory
+    delete buffer;
 }
 
 void MainWindow::whenConnectionDone()
 {
-    qDebug() << "connected..";
+    qDebug() << "[SOCKET] connected..";
 }
 
 void MainWindow::whenDisconnectionDone()
 {
-    qDebug() << "disconnected..";
+    qDebug() << "[SOCKET] Disconnected..";
 }
 
 void MainWindow::on_connectButton_clicked()
 {
     ui->connectButton->setEnabled(false);
+    qDebug() << "[SOCKET] Connect Trying...";
     emit requestConnection("devjhlab.iptime.org", 55555);
+}
+
+void MainWindow::on_disconnect_button_clicked()
+{
+    emit requestDisconnection();
 }
