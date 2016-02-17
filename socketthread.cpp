@@ -6,7 +6,24 @@
  * ***********************************************************/
 void SocketThread::run()
 {
-    qDebug() << mSocket->thread();
+    qDebug() << this->thread();
+    // initialization
+    m_readSizeAtOnce = 0;
+    m_bConnected = false;
+
+    // socket memory allocation.
+    m_socket = new QTcpSocket();
+    qDebug() << m_socket->thread();
+
+    // associate signal(QTcpSocket) & slot(this=QThread)
+    connect(m_socket, SIGNAL(connected()), this, SLOT(whenConnectedDone()));
+    connect(m_socket, SIGNAL(disconnected()), this, SLOT(whenDisconnected()));
+    connect(m_socket, SIGNAL(readyRead()), this, SLOT(whenReadyRead()));
+    connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(whenErrorOccured(QAbstractSocket::SocketError)));
+
+    // move thread affinity to this(QTHread)
+    // After this statement, mSocket's evernt processing will continue in this thread.
+    // not in the gui thread(previous thread)
     this->exec();
 }
 
@@ -22,22 +39,46 @@ void SocketThread::run()
 
 /* when the user request connection, connectToHost will be called. */
 /* It connects to the remote address desginated by string argument */
-void SocketThread::connectToHost(const std::string &url, uint16_t nPort)
+void SocketThread::connectToHost(const char *url, unsigned short nPort)
 {
-    assert(url.c_str() != nullptr);
+    assert(url != nullptr);
 
+    qDebug() << "[SOCKET @ " << this->thread() << "] connectToHost() called.";
     // connect to host using url, nPort
     // because the type of url is not consitent with QString,
     // it should be converted into (const char*) type.
     // c_str() does.
-    this->mSocket->connectToHost(url.c_str(), nPort);
+    this->m_socket->connectToHost(url, nPort);
 }
 
 void SocketThread::disconnectFromHost()
 {
-    assert(bConnected == true);
-    bConnected = false;
-    this->mSocket->disconnectFromHost();
+    qDebug() << "[SOCKET @ " << this->thread() << "] disconnectedFromHost() called.";
+    assert(m_bConnected == true);
+    m_bConnected = false;
+    this->m_socket->disconnectFromHost();
+}
+
+/* when the user want to send data to socket */
+size_t SocketThread::writeToSocket(char *buffer, int bufferSize)
+{
+    assert(buffer != nullptr);
+    assert(bufferSize >= 0);
+    assert(this->m_bConnected == true);
+
+    qDebug() << "[SOCKET @ " << this->thread() << "] writeToSocket() called.";
+
+    // write to socket.
+    auto writtenLength = m_socket->write(buffer, bufferSize);
+    qDebug() << "[SOCKET @ " << this->thread() << "] writeToSocket(), " << writtenLength << " byte wrote! ";
+
+    if (writtenLength != bufferSize)
+    {
+        qDebug() << "[SOCKET @ " << this->thread() << "] writtenLength != intended size";
+        // if the actual size of the written data is different from
+        // size of the buffer, it would be the ERROR case.
+
+    }
 }
 
 /***************** Excpetion SLOT ****************************
@@ -59,7 +100,8 @@ void SocketThread::disconnectFromHost()
 
 void SocketThread::readFromSockect(char *buffer, int readUpTo)
 {
-    assert(bConnected == true);
+    qDebug() << "[SOCKET @ " << this->thread() << "] readFromSocket() called.";
+    assert(m_bConnected == true);
     assert(buffer != nullptr);
 
     // errorCode = 0     : normal
@@ -67,7 +109,7 @@ void SocketThread::readFromSockect(char *buffer, int readUpTo)
     // errorCode = 2     : EOF
     int errorCode = 0;
 
-    auto readByteSize = this->mSocket->read(buffer, readUpTo);
+    auto readByteSize = this->m_socket->read(buffer, readUpTo);
 
     if (readByteSize == -1)
     {
@@ -98,19 +140,44 @@ void SocketThread::readFromSockect(char *buffer, int readUpTo)
  * ************************************************************/
 void SocketThread::whenConnectedDone()
 {
-    bConnected = true;
+    qDebug() << "[SOCKET @ " << this->thread() << "] whenConnectionDone() called.";
+    m_bConnected = true;
     emit youConnected();
 }
 
 void SocketThread::whenDisconnected()
 {
-    bConnected = false;
+    qDebug() << "[SOCKET @ " << this->thread() << "] whenDisconnected() called.";
+    m_bConnected = false;
+
+    // emit the signal that notify the client "You disconnected from the remote device!"
     emit youDisconnected();
 }
 
 void SocketThread::whenReadyRead()
 {
+    qDebug() << "[SOCKET @ " << this->thread() << "] whenReadyRead() called.";
     emit youCanRead();
+}
+
+void SocketThread::whenErrorOccured(QAbstractSocket::SocketError error)
+{
+    qDebug() << "[SOCKET @ " << this->thread() << "] whenErrorOccured() called.";
+    switch (error)
+    {
+    case QAbstractSocket::RemoteHostClosedError:
+        qDebug() << "[SOCKET] Remote Host Closed Error..";
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        qDebug() << "[SOCKET] Host Not Found Error";
+        break;
+    case QAbstractSocket::ConnectionRefusedError:
+        qDebug() << "[SOCKET] Connection Refused Error..";
+        break;
+    default:
+        qDebug() << m_socket->errorString();
+    }
+
 }
 
 /***************************************************************
@@ -122,24 +189,16 @@ void SocketThread::whenReadyRead()
 SocketThread::SocketThread(QObject *parent)
     :QThread(parent)
 {
-    bConnected = false;
-    // socket memory allocation.
-
-    mSocket = new QTcpSocket();
-
-    // associate signal(QTcpSocket) & slot(this=QThread)
-    connect(mSocket, SIGNAL(connected()), this, SLOT(whenConnectedDone()));
-    connect(mSocket, SIGNAL(disconnected()), this, SLOT(whenDisconnected()));
-    connect(mSocket, SIGNAL(readyRead()), this, SLOT(whenReadyRead()));
-
-    // move thread affinity to this(QTHread)
-    // After this statement, mSocket's evernt processing will continue in this thread.
-    // not in the gui thread(previous thread)
-    mSocket->moveToThread(this);
+    // all slot routines will be managed by the new Thread ( == SocketThread )
+    // not GUI Thread that made this socket thread.
+    this->moveToThread(this);
 }
 
 SocketThread::~SocketThread()
 {
-    assert(mSocket != nullptr);
-    delete mSocket;
+    assert(m_socket != nullptr);
+
+    // before deallocate socket, close the stream
+    m_socket->close();
+    delete m_socket;
 }

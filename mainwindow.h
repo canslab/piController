@@ -28,9 +28,11 @@ signals:
      *     emit requestDisconnection() signal
      *
      * ***********************************************************************/
-    void requestRead(char *buffer, int maxLength);
-    void requestConnection(const std::string &address, uint16_t port);
+    void requestConnection(const char *address, unsigned short port);
     void requestDisconnection();
+
+    void requestRead(char *buffer, int maxLength);
+    void requestWriting(char *buffer, int sizeOfBuffer);
 
 public:
     // keyboard & mouse event handler
@@ -74,6 +76,8 @@ private slots:
 
     void on_connectButton_clicked();
     void on_disconnect_button_clicked();
+
+    void on_sendButton_clicked();
 
 private:
     Ui::MainWindow *ui;             // UI pointer

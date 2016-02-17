@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QThread>
 #include <QTcpSocket>
-#include <string>
 
 class SocketThread : public QThread
 {
@@ -36,10 +35,13 @@ public slots:
 
     /* when the user request connection, connectToHost will be called. */
     /* It connects to the remote address desginated by string argument */
-    void connectToHost(const std::string& url, uint16_t nPort);
+    void connectToHost(const char *url, unsigned short nPort);
 
     /* when the user request disconnection, disconnectFromHost() will be invoked */
     void disconnectFromHost();
+
+    /* when the user want to send data to socket */
+    size_t writeToSocket(char *buffer, int bufferSize);
 
     /***************** Excpetion SLOT ****************************
      * Client to this
@@ -59,6 +61,7 @@ public slots:
      *
      * ***********************************************************/
     void readFromSockect(char *buffer, int readUpTo);
+
 
 protected slots:
     /*******************************************************************
@@ -81,19 +84,21 @@ protected slots:
     /* when there are available data in the read stream, it will be invoked */
     void whenReadyRead();
 
-public:
-    explicit SocketThread(QObject *parent = 0);
-    ~SocketThread();
+    /* when there are some error, mSocket will invoke this function to handle error */
+    void whenErrorOccured(QAbstractSocket::SocketError error);
 
 protected:
     virtual void run();
 
 protected:
-    QTcpSocket *mSocket;
-    std::pair<std::string, uint16_t> remoteAddress;
+    QTcpSocket *m_socket;
 
-    int readSizeAtOnce;
-    bool bConnected;
+    int m_readSizeAtOnce;
+    bool m_bConnected;
+
+public:
+    explicit SocketThread(QObject *parent = 0);
+    ~SocketThread();
 };
 
 #endif // SOCKETTHREAD_H

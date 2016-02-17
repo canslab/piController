@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mCurlThread = new CurlThread("http://devjhlab.iptime.org:8080/?action=stream");
 
     // socket thread
-    mSocketThread = new SocketThread(this);
+    mSocketThread = new SocketThread();
 
     // when mCurlThread's event loop has died, mCurlThread should be removed.
     connect(mCurlThread, &CurlThread::finished, mCurlThread, &CurlThread::deleteLater);
@@ -35,8 +35,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // GUI Thread ----> mSocketThread
     connect(this, SIGNAL(requestRead(char*,int)), mSocketThread, SLOT(readFromSockect(char*,int)));
-    connect(this, SIGNAL(requestConnection(std::string, uint16_t)), mSocketThread, SLOT(connectToHost(std::string, uint16_t)));
+    connect(this, SIGNAL(requestConnection(const char*, unsigned short)), mSocketThread, SLOT(connectToHost(const char*, unsigned short)));
     connect(this, SIGNAL(requestDisconnection()), mSocketThread, SLOT(disconnectFromHost()));
+    connect(this, SIGNAL(requestWriting(char*,int)), mSocketThread, SLOT(writeToSocket(char*,int)));
 
     // run SocketThread
     mSocketThread->start();
@@ -114,6 +115,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
  * **************************************/
 void MainWindow::whenReadIsReady()
 {
+    qDebug() << "[SOCKET @ " << this->thread() << "] you are able to read something";
     /* *************************************************************************
      *
      *      when you are able to read the data from remote PC,
@@ -133,6 +135,7 @@ void MainWindow::whenReadIsReady()
 void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
 {
     assert(buffer != nullptr);
+    qDebug() << "[SOCKET @ " << this->thread() << "] read job is done! , buffer contents are below";
     qDebug() << buffer[0];
 
     // deallocate used memory
@@ -141,22 +144,28 @@ void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
 
 void MainWindow::whenConnectionDone()
 {
-    qDebug() << "[SOCKET] connected..";
+    qDebug() << "[SOCKET @ " << this->thread() << "] connected! ";
 }
 
 void MainWindow::whenDisconnectionDone()
 {
-    qDebug() << "[SOCKET] Disconnected..";
+    qDebug() << "[SOCKET @ " << this->thread() << "] disconnected! ";
 }
 
 void MainWindow::on_connectButton_clicked()
 {
-    ui->connectButton->setEnabled(false);
-    qDebug() << "[SOCKET] Connect Trying...";
+//    ui->connectButton->setEnabled(false);
+    qDebug() << "[SOCKET @ " << this->thread() << "] connect trying...";
     emit requestConnection("devjhlab.iptime.org", 55555);
 }
 
 void MainWindow::on_disconnect_button_clicked()
 {
     emit requestDisconnection();
+}
+
+void MainWindow::on_sendButton_clicked()
+{
+    qDebug() << "[SOCKET @ " << this->thread() << "] write request button clicked ";
+    emit requestWriting("Hello JangHo Park", 10);
 }
