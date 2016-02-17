@@ -60,7 +60,7 @@ void SocketThread::disconnectFromHost()
 }
 
 /* when the user want to send data to socket */
-size_t SocketThread::writeToSocket(char *buffer, int bufferSize)
+size_t SocketThread::writeToSocket(const char *buffer, int bufferSize)
 {
     assert(buffer != nullptr);
     assert(bufferSize >= 0);
@@ -79,6 +79,7 @@ size_t SocketThread::writeToSocket(char *buffer, int bufferSize)
         // size of the buffer, it would be the ERROR case.
 
     }
+    return writtenLength;
 }
 
 /***************** Excpetion SLOT ****************************

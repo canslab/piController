@@ -41,7 +41,7 @@ public slots:
     void disconnectFromHost();
 
     /* when the user want to send data to socket */
-    size_t writeToSocket(char *buffer, int bufferSize);
+    size_t writeToSocket(const char *buffer, int bufferSize);
 
     /***************** Excpetion SLOT ****************************
      * Client to this

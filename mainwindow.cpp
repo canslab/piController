@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(requestRead(char*,int)), mSocketThread, SLOT(readFromSockect(char*,int)));
     connect(this, SIGNAL(requestConnection(const char*, unsigned short)), mSocketThread, SLOT(connectToHost(const char*, unsigned short)));
     connect(this, SIGNAL(requestDisconnection()), mSocketThread, SLOT(disconnectFromHost()));
-    connect(this, SIGNAL(requestWriting(char*,int)), mSocketThread, SLOT(writeToSocket(char*,int)));
+    connect(this, SIGNAL(requestWriting(const char*,int)), mSocketThread, SLOT(writeToSocket(const char*,int)));
 
     // run SocketThread
     mSocketThread->start();

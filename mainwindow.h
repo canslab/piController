@@ -32,7 +32,7 @@ signals:
     void requestDisconnection();
 
     void requestRead(char *buffer, int maxLength);
-    void requestWriting(char *buffer, int sizeOfBuffer);
+    void requestWriting(const char *buffer, int sizeOfBuffer);
 
 public:
     // keyboard & mouse event handler
