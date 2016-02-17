@@ -13,56 +13,60 @@
  * *********************************************************************/
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    m_ui(new Ui::MainWindow)
 {
-    ui->setupUi(this);
+    m_ui->setupUi(this);
 
-    // curl thread
-    mCurlThread = new CurlThread("http://devjhlab.iptime.org:8080/?action=stream");
+    // if the remote device is connected, this variable will be 1 otherwise 0
+    m_bSocketThreadConnected = false;
 
-    // socket thread
-    mSocketThread = new SocketThread();
+    // curl thread memory allocation
+    m_curlThread = new CurlThread("http://devjhlab.iptime.org:8080/?action=stream");
+
+    // socket thread memory allocation
+    m_socketThread = new SocketThread();
 
     // when mCurlThread's event loop has died, mCurlThread should be removed.
-    connect(mCurlThread, &CurlThread::finished, mCurlThread, &CurlThread::deleteLater);
-    connect(mCurlThread, &CurlThread::imageIsReady, this, &MainWindow::showVideoAtLabel);
+    connect(m_curlThread, &CurlThread::finished, m_curlThread, &CurlThread::deleteLater);
+    connect(m_curlThread, &CurlThread::imageIsReady, this, &MainWindow::showVideoAtLabel);
 
     //  mSocketThread -----> GUI Thread (This Thread)
-    connect(mSocketThread, SIGNAL(youCanRead()), this, SLOT(whenReadIsReady()));
-    connect(mSocketThread, SIGNAL(yourReadDone(int,char*,int)), this, SLOT(whenReadJobDone(int, char*, int)));
-    connect(mSocketThread, SIGNAL(youConnected()), this, SLOT(whenConnectionDone()));
-    connect(mSocketThread, SIGNAL(youDisconnected()), this, SLOT(whenDisconnectionDone()));
+    connect(m_socketThread, SIGNAL(yourReadDone(int,char*,int)), this, SLOT(whenReadJobDone(int, char*, int)));
+    connect(m_socketThread, SIGNAL(youCanRead()), this, SLOT(whenReadIsReady()));
+    connect(m_socketThread, SIGNAL(youConnected()), this, SLOT(whenConnectionDone()));
+    connect(m_socketThread, SIGNAL(youDisconnected()), this, SLOT(whenDisconnectionDone()));
 
     // GUI Thread ----> mSocketThread
-    connect(this, SIGNAL(requestRead(char*,int)), mSocketThread, SLOT(readFromSockect(char*,int)));
-    connect(this, SIGNAL(requestConnection(const char*, unsigned short)), mSocketThread, SLOT(connectToHost(const char*, unsigned short)));
-    connect(this, SIGNAL(requestDisconnection()), mSocketThread, SLOT(disconnectFromHost()));
-    connect(this, SIGNAL(requestWriting(const char*,int)), mSocketThread, SLOT(writeToSocket(const char*,int)));
+    connect(this, SIGNAL(requestRead(char*,int)), m_socketThread, SLOT(readFromSockect(char*,int)));
+    connect(this, SIGNAL(requestConnection(const char*, unsigned short)), m_socketThread, SLOT(connectToHost(const char*, unsigned short)));
+    connect(this, SIGNAL(requestDisconnection()), m_socketThread, SLOT(disconnectFromHost()));
+    connect(this, SIGNAL(requestWriting(const char*,int)), m_socketThread, SLOT(writeToSocket(const char*,int)));
+
 
     // run SocketThread
-    mSocketThread->start();
+    m_socketThread->start();
 
-    mVideoLabelRect = ui->videoLabel->geometry();
+    m_videoLabelRect = m_ui->videoLabel->geometry();
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    delete m_ui;
 }
 /************************************************************************
  *          normal method
  * *********************************************************************/
 void MainWindow::on_cameraOn_clicked()
 {
-    myTime.start();
-    mCurlThread->start();
+    m_timer.start();
+    m_curlThread->start();
 }
 
 // When CurlThread is ready to send you a frame, this slot would be called...
 //  ( because you register signal-slot relationship in your initializer )
 void MainWindow::showVideoAtLabel(cv::Mat *frame)
 {
-    ui->cameraOn->setEnabled(false);
+    m_ui->cameraOn->setEnabled(false);
 
     // elaseped time == about 0 ~ 1 msec
     cv::Mat decodedImage = *frame;
@@ -71,7 +75,7 @@ void MainWindow::showVideoAtLabel(cv::Mat *frame)
     QImage img = QImage((uchar*)decodedImage.data, decodedImage.cols, decodedImage.rows, decodedImage.step,
                         QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img);
-    ui->videoLabel->setPixmap(pix);
+    m_ui->videoLabel->setPixmap(pix);
 }
 
 /********************************************************************************
@@ -83,30 +87,30 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     switch(event->key())
     {
     case Qt::Key_W:     /* Up Button */
-        ui->test->setText("Up!");
+        m_ui->test->setText("Up!");
         break;
     case Qt::Key_A:     /* Left Button */
-        ui->test->setText("Left!");
+        m_ui->test->setText("Left!");
         break;
     case Qt::Key_S:     /* Down Button */
-        ui->test->setText("Down!");
+        m_ui->test->setText("Down!");
         break;
     case Qt::Key_D:     /* Right Button */
-        ui->test->setText("Right!");
+        m_ui->test->setText("Right!");
         break;
     case Qt::Key_L:
-        ui->test->setText("Led!");
+        m_ui->test->setText("Led!");
         break;
     }
 }
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
-    const int videoLabelX = mVideoLabelRect.x();
-    const int videoLabelY = mVideoLabelRect.y();
+    const int videoLabelX = m_videoLabelRect.x();
+    const int videoLabelY = m_videoLabelRect.y();
     QPoint mosPos = event->pos();
 
     auto labelText = QString::asprintf("x = %d, y = %d", mosPos.x() - videoLabelX, mosPos.y() - videoLabelY);
-    ui->mousePosLabel->setText(labelText);
+    m_ui->mousePosLabel->setText(labelText);
 }
 
 /*****************************************
@@ -127,16 +131,16 @@ void MainWindow::whenReadIsReady()
      * *************************************************************************/
 
     // ready for buffer, protocol size's length is 8
-    char *buffer = new char[8];
+    char *buffer = new char[10];
 
-    emit requestRead(buffer, 8);
+    emit requestRead(buffer, 10);
 }
 
 void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
 {
     assert(buffer != nullptr);
     qDebug() << "[SOCKET @ " << this->thread() << "] read job is done! , buffer contents are below";
-    qDebug() << buffer[0];
+    qDebug() << buffer;
 
     // deallocate used memory
     delete buffer;
@@ -145,27 +149,39 @@ void MainWindow::whenReadJobDone(int errorCode, char *buffer, int maxLength)
 void MainWindow::whenConnectionDone()
 {
     qDebug() << "[SOCKET @ " << this->thread() << "] connected! ";
+    m_bSocketThreadConnected = true;
+    m_ui->connectButton->setEnabled(false);
 }
 
 void MainWindow::whenDisconnectionDone()
 {
     qDebug() << "[SOCKET @ " << this->thread() << "] disconnected! ";
+    m_bSocketThreadConnected = false;
+    m_ui->connectButton->setEnabled(true);
 }
 
 void MainWindow::on_connectButton_clicked()
 {
-//    ui->connectButton->setEnabled(false);
     qDebug() << "[SOCKET @ " << this->thread() << "] connect trying...";
     emit requestConnection("devjhlab.iptime.org", 55555);
 }
 
 void MainWindow::on_disconnect_button_clicked()
 {
+    assert(m_bSocketThreadConnected == true);
     emit requestDisconnection();
 }
 
 void MainWindow::on_sendButton_clicked()
 {
+    assert(m_bSocketThreadConnected == true);
     qDebug() << "[SOCKET @ " << this->thread() << "] write request button clicked ";
-    emit requestWriting("Hello JangHo Park", 10);
+    emit requestWriting("o", 2);
+}
+
+void MainWindow::on_backwardButton_clicked()
+{
+    assert(m_bSocketThreadConnected == true);
+    qDebug() << "[SOCKET @ " << this->thread() << "] write request button clicked ";
+    emit requestWriting("x", 2);
 }

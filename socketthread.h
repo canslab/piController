@@ -62,7 +62,6 @@ public slots:
      * ***********************************************************/
     void readFromSockect(char *buffer, int readUpTo);
 
-
 protected slots:
     /*******************************************************************
      * mSocket to this

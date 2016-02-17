@@ -80,16 +80,16 @@ private slots:
     void on_sendButton_clicked();
 
 private:
-    Ui::MainWindow *ui;             // UI pointer
-    CurlThread *mCurlThread;        // curl   THREAD, it streams the video from the remote device
-    SocketThread *mSocketThread;    // socket THREAD, it connectes to the remote device, and do communication with it.
+    Ui::MainWindow *m_ui;             // UI pointer
+    CurlThread *m_curlThread;        // curl   THREAD, it streams the video from the remote device
+    SocketThread *m_socketThread;    // socket THREAD, it connectes to the remote device, and do communication with it.
 
-    QTime myTime;                   // for debugging
-
+    QTime m_timer;                   // for debugging
+    bool m_bSocketThreadConnected;
 private:
     /* constant */
     // it contains the size info of video label
-    QRect mVideoLabelRect;
+    QRect m_videoLabelRect;
 
 public:
     explicit MainWindow(QWidget *parent = 0);
