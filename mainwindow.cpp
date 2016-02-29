@@ -68,6 +68,7 @@ void MainWindow::showVideoAtLabel(cv::Mat *frame)
 {
     m_ui->cameraOn->setEnabled(false);
 
+    qDebug() << "ELAPSED = " << m_timer.elapsed();
     // elaseped time == about 0 ~ 1 msec
     cv::Mat decodedImage = *frame;
 
@@ -84,22 +85,45 @@ void MainWindow::showVideoAtLabel(cv::Mat *frame)
  * ******************************************************************************/
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+    assert(m_bSocketThreadConnected == true);
+
     switch(event->key())
     {
     case Qt::Key_W:     /* Up Button */
-        m_ui->test->setText("Up!");
+        emit requestWriting("f", 2);
         break;
     case Qt::Key_A:     /* Left Button */
-        m_ui->test->setText("Left!");
+        emit requestWriting("l", 2);
         break;
     case Qt::Key_S:     /* Down Button */
-        m_ui->test->setText("Down!");
+        emit requestWriting("b", 2);
         break;
     case Qt::Key_D:     /* Right Button */
-        m_ui->test->setText("Right!");
+        emit requestWriting("r", 2);
         break;
-    case Qt::Key_L:
-        m_ui->test->setText("Led!");
+
+    /////////
+
+    case Qt::Key_Z:     /* horizontal servo motor turn left */
+        emit requestWriting("z", 2);
+        break;
+    case Qt::Key_X:     /* horizontal servo motor turn origin */
+        emit requestWriting("x", 2);
+        break;
+    case Qt::Key_C:     /* horizontal servo motor turn right */
+        emit requestWriting("c", 2);
+        break;
+
+    //////////////////
+
+    case Qt::Key_O:     /* vertical servo motor turn upper */
+        emit requestWriting("o", 2);
+        break;
+    case Qt::Key_K:     /* vertical servo motor turn origin */
+        emit requestWriting("k", 2);
+        break;
+    case Qt::Key_M:     /* vertical servo motor turn down */
+        emit requestWriting("m", 2);
         break;
     }
 }
@@ -177,11 +201,4 @@ void MainWindow::on_sendButton_clicked()
     assert(m_bSocketThreadConnected == true);
     qDebug() << "[SOCKET @ " << this->thread() << "] write request button clicked ";
     emit requestWriting("o", 2);
-}
-
-void MainWindow::on_backwardButton_clicked()
-{
-    assert(m_bSocketThreadConnected == true);
-    qDebug() << "[SOCKET @ " << this->thread() << "] write request button clicked ";
-    emit requestWriting("x", 2);
 }

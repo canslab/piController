@@ -5,11 +5,9 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-using namespace cv;
-
 struct MemStruct
 {
-    unsigned char *pMemory;
+    unsigned char pMemory[200000];
     unsigned int size;
 };
 
@@ -35,7 +33,7 @@ protected:
 private:
     CURL *mCtx;
     MemStruct *mMemory;
-    Mat mFrameMat;
+    cv::Mat mFrameMat;
 };
 
 #endif // CURLTHREAD_H
