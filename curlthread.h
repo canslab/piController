@@ -3,12 +3,11 @@
 #include <QThread>
 #include <curl/curl.h>
 #include <opencv2/opencv.hpp>
-
-using namespace cv;
+#include <string>
 
 struct MemStruct
 {
-    unsigned char *pMemory;
+    unsigned char pMemory[200000];
     unsigned int size;
 };
 
@@ -22,6 +21,7 @@ public:
     ~CurlThread();
 
 signals:
+    // when image is ready, CurlThread emit this signal to notify the client to receive Mat data
     void imageIsReady(cv::Mat *frameMat);
 
 public:
@@ -33,9 +33,7 @@ protected:
 private:
     CURL *mCtx;
     MemStruct *mMemory;
-    Mat mFrameMat;
-
-
+    cv::Mat mFrameMat;
 };
 
 #endif // CURLTHREAD_H

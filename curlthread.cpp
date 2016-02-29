@@ -5,19 +5,15 @@
 #include <iostream>
 #include <QTime>
 
+using namespace cv;
+
 // static function declaration.
 static int findHeader(unsigned char target[], const unsigned char *memory, int memorySize, int cachedPos);
-static void* CURL_realloc(void *ptr, size_t size);
 
 // member functions
 CurlThread::CurlThread(const char *pszURL, QObject *parent)
     :QThread(parent)
 {
-    // allocation for memory and initialization
-    mMemory = (MemStruct*)malloc(sizeof(MemStruct));
-    mMemory->pMemory = nullptr;
-    mMemory->size = 0;
-
     // init libcurl
     this->mCtx = curl_easy_init();
     curl_easy_setopt(mCtx, CURLOPT_URL, pszURL);
@@ -37,15 +33,16 @@ CurlThread::~CurlThread()
 
 void CurlThread::run()
 {
+    // allocation for memory and initialization
+    mMemory = (MemStruct*)malloc(sizeof(MemStruct));
+    mMemory->size = 0;
+
     CURLcode res;
 
     if (mCtx != nullptr)
     {
         res = curl_easy_perform(mCtx);
     }
-
-    // enter event loop
-    exec();
 }
 
 /*************************************************************************************************
@@ -68,9 +65,6 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
     CurlThread *masterThread = (CurlThread*)userData;
     struct MemStruct *mem = (MemStruct*)(masterThread->mMemory);
 
-    // memory expansion.
-    mem->pMemory = (unsigned char*)CURL_realloc(mem->pMemory, mem->size + realSize +1);
-
     if (mem->pMemory)
     {
         // append
@@ -82,85 +76,106 @@ CurlThread::writeMemoryCallback (void *receivedPtr, size_t size, size_t nmemb, v
 
         if (cachedX == -1)  // check whether we need to find Start Header ( 0xffd8 )
         {
-            cachedX = findHeader(soi, mem->pMemory, mem->size, 0);
+            cachedX = findHeader(soi, mem->pMemory, mem->size, cachedX);
         }
         if (cachedY == -1)  // check whether we need to find End Header ( 0xffd9 )
         {
-            cachedY = findHeader(eoi, mem->pMemory, mem->size, 0);
+            cachedY = findHeader(eoi, mem->pMemory, mem->size, cachedY);
         }
 
         if (cachedX != -1 && cachedY != -1)
         {
-            if (cachedX < cachedY)
-            {
-                // elapsed time ==> 3 ~ 4 msec
-
+//            if (cachedX < cachedY)
+//            {
                 // calculate the new buffer size
                 unsigned int newBufferSize = (mem->size - (cachedY + 2));
                 unsigned int imageSize = (cachedY - cachedX + 2);
 
-                // image memory copy
-                unsigned char *imageBuffer = (unsigned char*)malloc(sizeof(unsigned char) * imageSize);
-                memcpy(imageBuffer, &(mem->pMemory[cachedX]), imageSize);
+                masterThread->mFrameMat = imdecode(Mat(1, imageSize, CV_8UC1, &(mem->pMemory[cachedX])), CV_LOAD_IMAGE_UNCHANGED);
+                cv::resize(masterThread->mFrameMat, masterThread->mFrameMat, cv::Size(640, 480));
+
+                // when your image is ready, notify the gui thread that image is ready
+                emit masterThread->imageIsReady(&(masterThread->mFrameMat));
 
                 // memory copy
-                unsigned char *newBuffer = (unsigned char*)malloc(sizeof(unsigned char) * newBufferSize);
-                memcpy(newBuffer, &(mem->pMemory[cachedY+2]), newBufferSize);
-
-                // deallocate the old buffer
-                free(mem->pMemory);
-
-                // save the adress of new buffer to the pMemory
-                // also size of the new buffer is assigned
-                mem->pMemory = newBuffer;
+                memcpy(mem->pMemory, &(mem->pMemory[cachedY+2]), newBufferSize);
                 mem->size = newBufferSize;
 
                 // reset cache (find position)
                 cachedX = cachedY = -1;
-
-                // image decode and save it to mFrame, and emit signal!
-                masterThread->mFrameMat = imdecode(Mat(1, imageSize, CV_8UC1, imageBuffer), CV_LOAD_IMAGE_UNCHANGED);
-
-                // commented.. because label's width and height are equal to mFrameMat, doesn't have to call resize
-//                cv::resize(masterThread->mFrameMat, masterThread->mFrameMat, cv::Size(640, 480));
-
-                // emit SIGNAL!
-                emit masterThread->imageIsReady(&(masterThread->mFrameMat));
-            }
+//            }
         }
     }
-
-
     return realSize;
 }
 
 /*****************************************
  * static function and isn't included in CurlWorker Class
+ *
+ * [ Objectives ]
+ *
+ * it finds where the target is.
+ * cachedPos is used to help this routine find more faster.
+ *
+ * [ Parameter description ]
+ *
+ * target = pointer to array that want to be found
+ * memory = pointer to memory array that would be investigated
+ * memorySize = the size of memory
+ * cachedPos = to help this routine find position of the target easy.
+ *
+ * [ Return description ]
+ *
+ * -1         : no found
+ * otheriwse  : the position of the target. (index would start from zero)
+ *
  *****************************************/
 static int findHeader(unsigned char target[], const unsigned char *memory, int memorySize, int cachedPos)
 {
-    int foundPosition = -1;
+    assert(cachedPos >= -1);
+    assert(target != nullptr);
+    assert(memory != nullptr);
+    assert(memorySize > 0);
 
-    for (int i = cachedPos; i < memorySize; ++i)
+    int foundPosition = -1;
+    int leftSeeker = cachedPos - 1;
+    int rightSeeker = cachedPos;
+
+    bool leftEnd = false;
+    bool rightEnd = false;
+
+
+//    while (leftSeeker >= 1 || rightSeeker < memorySize)
+    while (leftEnd == false || rightEnd == false)
     {
-        // first find 0xff
-        if (memory[i] == target[0] && memory[i+1] == target[1])
+        if (leftSeeker >= 1)
         {
-            foundPosition = i;
+            if (memory[leftSeeker] == target[1] && memory[leftSeeker - 1] == target[0])
+            {
+                foundPosition = leftSeeker - 1;
+                break;
+            }
+            leftSeeker--;
+        }
+        else
+        {
+            leftEnd = true;
+        }
+
+        if (rightSeeker < memorySize)
+        {
+            if (memory[rightSeeker] == target[0] && memory[rightSeeker + 1] == target[1])
+            {
+                foundPosition = rightSeeker;
+                break;
+            }
+            rightSeeker++;
+        }
+        else
+        {
+            rightEnd = true;
         }
     }
-
     return foundPosition;
 }
 
-static void* CURL_realloc(void *ptr, size_t size)
-{
-    if (ptr)
-    {
-        return realloc(ptr, size);
-    }
-    else
-    {
-        return malloc(size);
-    }
-}
