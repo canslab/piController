@@ -1,0 +1,21 @@
+package piController;
+
+message MsgChunk 
+{
+	enum MsgType 
+	{
+		MOTOR_CONTRL = 0;
+		NORMAL = 1;
+	}
+
+	enum MotorType
+	{
+		DCMotor = 0;
+		ServoMotor_HORIZONTAL = 1;
+		ServoMotor_VERTICAL = 2;
+	}
+
+	required MsgType    msgType = 1; 
+	optional MotorType  motorType = 2;
+	repeated int32		values = 3;
+}

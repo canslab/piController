@@ -20,11 +20,13 @@ QMAKE_LFLAGS_RELEASE += -O2
 SOURCES += main.cpp\
         mainwindow.cpp \
     curlthread.cpp \
-    socketthread.cpp
+    socketthread.cpp \
+    protobuf/MsgChunk.pb.cc
 
 HEADERS  += mainwindow.h \
     curlthread.h \
-    socketthread.h
+    socketthread.h \
+    protobuf/MsgChunk.pb.h
 
 FORMS    += mainwindow.ui
 
@@ -39,7 +41,8 @@ LIBS += -L/usr/local/lib \
         -lopencv_tracking \
         -lopencv_videoio \
         -lopencv_imgcodecs \
-           -lcurl
+        -lprotobuf \
+        -lcurl
 
 
 

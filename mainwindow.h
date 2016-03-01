@@ -7,7 +7,7 @@
 #include <string>
 #include "curlthread.h"
 #include "socketthread.h"
-
+#include "protobuf/MsgChunk.pb.h"
 namespace Ui {
 class MainWindow;
 }
@@ -86,6 +86,8 @@ private:
 
     QTime m_timer;                   // for debugging
     bool m_bSocketThreadConnected;
+    piController::MsgChunk m_msgChunk;
+
 private:
     /* constant */
     // it contains the size info of video label
