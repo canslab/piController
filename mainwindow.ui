@@ -261,6 +261,32 @@
       <string>- You Clicked -</string>
      </property>
     </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>680</x>
+       <y>510</y>
+       <width>41</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>FPS:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="fpsLabel">
+     <property name="geometry">
+      <rect>
+       <x>740</x>
+       <y>510</y>
+       <width>41</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>30</string>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>

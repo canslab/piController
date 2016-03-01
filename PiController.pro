@@ -12,6 +12,11 @@ TARGET = PiController
 TEMPLATE = app
 CONFIG += c++11
 
+QMAKE_CXXFLAGS_RELEASE -= -O1
+QMAKE_CXXFLAGS_RELEASE -= -O3
+
+QMAKE_LFLAGS_RELEASE += -O2
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     curlthread.cpp \

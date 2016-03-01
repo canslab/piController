@@ -144,8 +144,6 @@ static int findHeader(unsigned char target[], const unsigned char *memory, int m
     bool leftEnd = false;
     bool rightEnd = false;
 
-
-//    while (leftSeeker >= 1 || rightSeeker < memorySize)
     while (leftEnd == false || rightEnd == false)
     {
         if (leftSeeker >= 1)

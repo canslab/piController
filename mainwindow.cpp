@@ -7,6 +7,7 @@
 #include <QtCore>
 #include "assert.h"
 
+#define TIME_ELAPSE 1
 
 /************************************************************************
  *          constructor & destructor
@@ -66,9 +67,16 @@ void MainWindow::on_cameraOn_clicked()
 //  ( because you register signal-slot relationship in your initializer )
 void MainWindow::showVideoAtLabel(cv::Mat *frame)
 {
-    m_ui->cameraOn->setEnabled(false);
+#if TIME_ELAPSE
+    static long long previousTime = m_timer.elapsed();
 
-    qDebug() << "ELAPSED = " << m_timer.elapsed();
+    auto temp = m_timer.elapsed();
+    int interval = temp - previousTime;
+    previousTime = temp;
+//    m_ui->fpsLabel->setText(QString("%1").arg(interval));
+    qDebug() << interval;
+#endif
+    m_ui->cameraOn->setEnabled(false);
     // elaseped time == about 0 ~ 1 msec
     cv::Mat decodedImage = *frame;
 
