@@ -1,10 +1,8 @@
 #include "mainwindow.h"
 #include <QApplication>
-#include "protobuf/MsgChunk.pb.h"
 
-int main(int argc, char *argv[])
-{
-    GOOGLE_PROTOBUF_VERIFY_VERSION;
+int main(int argc, char *argv[]){
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();

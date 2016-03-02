@@ -21,12 +21,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     curlthread.cpp \
     socketthread.cpp \
-    protobuf/MsgChunk.pb.cc
+    protobuf/MsgChunk.pb.cc \
+    msgassembler.cpp
 
 HEADERS  += mainwindow.h \
     curlthread.h \
     socketthread.h \
-    protobuf/MsgChunk.pb.h
+    protobuf/MsgChunk.pb.h \
+    msgassembler.h
 
 FORMS    += mainwindow.ui
 

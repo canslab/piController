@@ -5,6 +5,9 @@
 #include <QPixmap>
 #include <QImage>
 #include <QtCore>
+#include <string>
+
+#include "msgassembler.h"
 #include "assert.h"
 
 #define TIME_ELAPSE 1
@@ -17,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui(new Ui::MainWindow)
 {
     m_ui->setupUi(this);
+    m_msgAssembler  = new MsgAssembler();
 
     // if the remote device is connected, this variable will be 1 otherwise 0
     m_bSocketThreadConnected = false;
@@ -43,7 +47,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(requestDisconnection()), m_socketThread, SLOT(disconnectFromHost()));
     connect(this, SIGNAL(requestWriting(const char*,int)), m_socketThread, SLOT(writeToSocket(const char*,int)));
 
-
     // run SocketThread
     m_socketThread->start();
 
@@ -52,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    delete m_msgAssembler;
     delete m_ui;
 }
 /************************************************************************
@@ -94,10 +98,13 @@ void MainWindow::showVideoAtLabel(cv::Mat *frame)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     assert(m_bSocketThreadConnected == true);
+    std::string toBeSentMessage;
 
     switch(event->key())
     {
     case Qt::Key_W:     /* Up Button */
+//        m_msgAssembler->assembleMsg(MsgAssembler::MOTOR_MSG, MsgAssembler::DC_MOTOR, {200, 165});
+//        auto tempStr = m_msgAssembler->getAssembledMsg();
         emit requestWriting("f", 2);
         break;
     case Qt::Key_A:     /* Left Button */

@@ -5,12 +5,17 @@
 #include <QTime>
 #include <QKeyEvent>
 #include <string>
+
 #include "curlthread.h"
 #include "socketthread.h"
-#include "protobuf/MsgChunk.pb.h"
-namespace Ui {
-class MainWindow;
+
+namespace Ui
+{
+    class MainWindow;
 }
+
+// class forward declaration
+class MsgAssembler;
 
 class MainWindow : public QMainWindow
 {
@@ -86,7 +91,7 @@ private:
 
     QTime m_timer;                   // for debugging
     bool m_bSocketThreadConnected;
-    piController::MsgChunk m_msgChunk;
+    MsgAssembler *m_msgAssembler;
 
 private:
     /* constant */
