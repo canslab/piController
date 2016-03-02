@@ -12,9 +12,9 @@ TARGET = PiController
 TEMPLATE = app
 CONFIG += c++11
 
+# optimization flag ==> -O2
 QMAKE_CXXFLAGS_RELEASE -= -O1
 QMAKE_CXXFLAGS_RELEASE -= -O3
-
 QMAKE_LFLAGS_RELEASE += -O2
 
 SOURCES += main.cpp\
@@ -22,13 +22,15 @@ SOURCES += main.cpp\
     curlthread.cpp \
     socketthread.cpp \
     protobuf/MsgChunk.pb.cc \
-    msgassembler.cpp
+    msgassembler.cpp \
+    MotorController/motorcontroller.cpp \
 
 HEADERS  += mainwindow.h \
     curlthread.h \
     socketthread.h \
     protobuf/MsgChunk.pb.h \
-    msgassembler.h
+    msgassembler.h \
+    MotorController/motorcontroller.h \
 
 FORMS    += mainwindow.ui
 
